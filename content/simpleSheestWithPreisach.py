@@ -117,7 +117,8 @@ print(f"ndof  :{ndof}")
 sol_ref = GridFunction(V, "sol") 
 sol_ref_o = GridFunction(V, "sol") 
 sol_ref_it_o = GridFunction(V, "sol") 
-
+from myPackage import myBreak
+myBreak(locals(), globals(), file=__file__.split('/')[-1])
 A_ref = sol_ref.components[0] 
 A_ref_o = sol_ref_o.components[0] 
 A_ref_it_o = sol_ref_it_o.components[0] 

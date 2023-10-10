@@ -301,7 +301,11 @@ class mesh2DLaminates():
         coef = 1
         coef *= (1 if fullProblemX else 2)
         coef *= (1 if fullProblemY else 2)
-        assert_almost(Integrate(1, self.mesh) * coef, self.D * self.D, 1e-6, f"volume is wrong")
+
+        width = self.D if not onlySmooth else self.d
+        height = self.D if not onlyRough else self.d
+
+        assert_almost(Integrate(1, self.mesh) * coef, width * height, 1e-6, f"volume is wrong")
 
         if multiscale:
             if not (modelGap and gapDomainName == "multiscale"):

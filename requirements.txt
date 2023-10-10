@@ -46,6 +46,6 @@ ipyleaflet
 plotly>=5,<6
 bqplot
 
-webgui_jupyter_widgets
+webgui_jupyter_widgets==0.2.25
 jupyterlab-open-url-parameter
 

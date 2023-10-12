@@ -32,8 +32,14 @@ class mesh2DLaminates():
         if type(maxh) == type(None):
             maxh = self.d
 
+        
         if type(maxh_edges) == type(None):
             maxh_edges = self.d0 * 2
+        if not hasattr(maxh_edges, "__iter__"):
+            # rough, smooth
+            maxh_edges = [self.d0 * 2, self.d0 * 2]
+
+        print(maxh_edges)
 
         assert not(onlyRough * onlySmooth)
 
@@ -91,7 +97,6 @@ class mesh2DLaminates():
                 wp.MoveTo(xstart, -d/2)
                 #iron
                 rect_sheets.append(wp.Rectangle(self.dFe, d).Face())
-                rect_sheets[-1].edges.maxh = maxh_edges
                 rect_sheets[-1].name = "inner"
                 rect_sheets[-1].col = (1, 0, 0, 1)
                 if self.onlySmooth:
@@ -161,7 +166,6 @@ class mesh2DLaminates():
             if modelHalfAir and domainNameHalfAir != "multiscale":
                 wp.MoveTo(xstart, -d/2)
                 rect_sheets.append(wp.Rectangle(self.d0/2, d).Face())
-                rect_sheets[-1].edges.maxh = maxh_edges
                 rect_sheets[-1].name = domainNameHalfAir
                 if self.onlySmooth:
                     rect_sheets[-1].edges.Min(Y).name = bottom
@@ -188,7 +192,6 @@ class mesh2DLaminates():
                 xstart += self.d0/2
                 wp.MoveTo(xstart, -d/2)
                 rect_sheets.append(wp.Rectangle(d - self.d0, d).Face())
-            rect_sheets[-1].edges.maxh = maxh_edges
             rect_sheets[-1].name = "multiscale"
             if self.onlySmooth:
                 rect_sheets[-1].edges.Min(Y).name = bottom
@@ -210,7 +213,6 @@ class mesh2DLaminates():
             if modelHalfAir and domainNameHalfAir != "multiscale":
                 wp.MoveTo(-xstart, -d/2)
                 rect_sheets.append(wp.Rectangle(self.d0/2, d).Face())
-                rect_sheets[-1].edges.maxh = maxh_edges
                 rect_sheets[-1].name = domainNameHalfAir
                 if self.onlySmooth:
                     rect_sheets[-1].edges.Min(Y).name = bottom
@@ -269,7 +271,11 @@ class mesh2DLaminates():
                     rect_sheets[-1].edges.Min(X).name = left
                     rect_sheets[-1].edges.Max(Y).name = top
                     
-
+        for r in rect_sheets:   
+            r.edges.Min(X if rotated else Y).maxh = maxh_edges[0]
+            r.edges.Max(X if rotated else Y).maxh = maxh_edges[0]
+            r.edges.Min(Y if rotated else X).maxh = maxh_edges[1]
+            r.edges.Max(Y if rotated else X).maxh = maxh_edges[1]
 
         self.geo = Glue([outer - sum(rect_sheets)] + rect_sheets)
 

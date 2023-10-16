@@ -37,9 +37,9 @@ class mesh2DLaminates():
             maxh_edges = self.d0 * 2
         if not hasattr(maxh_edges, "__iter__"):
             # rough, smooth
-            maxh_edges = [self.d0 * 2, self.d0 * 2]
+            maxh_edges = [maxh_edges , maxh_edges ]
 
-        print(maxh_edges)
+        print("maxh_edges", maxh_edges)
 
         assert not(onlyRough * onlySmooth)
 
@@ -272,10 +272,13 @@ class mesh2DLaminates():
                     rect_sheets[-1].edges.Max(Y).name = top
                     
         for r in rect_sheets:   
-            r.edges.Min(X if rotated else Y).maxh = maxh_edges[0]
-            r.edges.Max(X if rotated else Y).maxh = maxh_edges[0]
-            r.edges.Min(Y if rotated else X).maxh = maxh_edges[1]
-            r.edges.Max(Y if rotated else X).maxh = maxh_edges[1]
+            if r.name == "multiscale" or r.name == "inner":
+
+                r.edges.Min(X if rotated else Y).maxh = maxh_edges[0]
+                r.edges.Max(X if rotated else Y).maxh = maxh_edges[0]
+
+                r.edges.Min(Y if rotated else X).maxh = maxh_edges[1]
+                r.edges.Max(Y if rotated else X).maxh = maxh_edges[1]
 
         self.geo = Glue([outer - sum(rect_sheets)] + rect_sheets)
 

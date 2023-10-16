@@ -85,7 +85,7 @@ class mesh2DLaminates():
                 wp.MoveTo(xstart - self.d0/2, -d/2)
                 rect_sheets.append(wp.Rectangle(self.d0/2, d).Face())
                 rect_sheets[-1].name = "insulation"
-                rect_sheets[-1].col = (1, 0, 1, 1)
+                rect_sheets[-1].col = (0.1, 0, 1, 1)
                 if self.onlySmooth:
                     rect_sheets[-1].edges.Min(Y).name = bottom
                     rect_sheets[-1].edges.Max(Y).name = top
@@ -116,7 +116,7 @@ class mesh2DLaminates():
                     wp.MoveTo(xstart, -d/2)
                     rect_sheets.append(wp.Rectangle(self.d0, d).Face())
                     rect_sheets[-1].name = "insulation"
-                    rect_sheets[-1].col = (1, 0, 1, 1)
+                    rect_sheets[-1].col = (0.1, 0, 1, 1)
                     if self.onlySmooth:
                         rect_sheets[-1].edges.Min(Y).name = bottom
                         rect_sheets[-1].edges.Max(Y).name = top
@@ -127,7 +127,7 @@ class mesh2DLaminates():
                 wp.MoveTo(xstart , -d/2)
                 rect_sheets.append(wp.Rectangle(self.d0/2, d).Face())
                 rect_sheets[-1].name = "insulation"
-                rect_sheets[-1].col = (1, 0, 1, 1)
+                rect_sheets[-1].col = (0.1, 0, 1, 1)
                 if self.onlySmooth:
                     rect_sheets[-1].edges.Min(Y).name = bottom
                     rect_sheets[-1].edges.Max(Y).name = top

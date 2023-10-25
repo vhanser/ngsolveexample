@@ -2,6 +2,10 @@ from netgen.occ import *
 from ngsolve import Mesh, Integrate
 
 def assert_almost(a, b, eps, txt):
+    if a == b:
+        return 
+    if a == 0:
+        assert False, txt + f" {a}, {b}"
     assert abs((a-b)/a) <= eps, txt + f" {a}, {b}, error: {abs((a-b)/a)} > {eps}"
 
 
@@ -157,7 +161,9 @@ class mesh2DLaminates():
 
                     
 
-
+        # ------------------------------------------------------------------------------
+        # --- Multiscale
+        # ------------------------------------------------------------------------------
 
 
         else: 
@@ -181,10 +187,9 @@ class mesh2DLaminates():
                     rect_sheets[-1].edges.Min(X).name = "i" + left + "_outer"
                     rect_sheets[-1].edges.Max(X).name = "i" + right
                 rect_sheets[-1].col = (0, 0, 1, 1)
-                xstart += self.d0/2
+
 
             # frameless multiscale
-
             if modelHalfAir and domainNameHalfAir == "multiscale":
                 wp.MoveTo(xstart, -d/2)
                 rect_sheets.append(wp.Rectangle(d , d).Face())
@@ -252,8 +257,8 @@ class mesh2DLaminates():
                     rect_sheets[-1].edges.Min(X).name = left
                     rect_sheets[-1].edges.Max(Y).name = top
                 else:
-                    if domainNameHalfAir != "multiscale":
-                        raise RuntimeError("model gap and different domain halfAir not implemented yet")
+                    # if domainNameHalfAir != "multiscale":
+                    #     raise RuntimeError("model gap and different domain halfAir not implemented yet")
 
                     wp.MoveTo(-d/2 + self.d0/2, -D/2 )
                     rect_sheets.append(wp.Rectangle(d-self.d0, (D-d)/2 ).Face())
@@ -321,6 +326,8 @@ class mesh2DLaminates():
                 if modelHalfAir and domainNameHalfAir == "multiscale":
                     assert_almost(Integrate(1, self.mesh, definedon=self.mesh.Materials("multiscale")) * coef, self.d * self.d, 1e-6, "multiscale area is wrong")
                 else:
+                    if modelHalfAir:
+                        assert_almost(Integrate(1, self.mesh, definedon=self.mesh.Materials(self.domainNameHalfAir)) * coef, self.d * (self.d0), 1e-6, "multiscale area is wrong")
                     assert_almost(Integrate(1, self.mesh, definedon=self.mesh.Materials("multiscale")) * coef, self.d * (self.d - self.d0), 1e-6, "multiscale area is wrong")
             else:
                 if modelHalfAir and domainNameHalfAir == "multiscale":

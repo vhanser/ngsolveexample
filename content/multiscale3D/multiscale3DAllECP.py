@@ -26,7 +26,7 @@ import numpy as np
 def run():
     static = False
 
-    numSheets = 5
+    numSheets = 3
     numPeriods = 1
     d = 20e-3/numSheets
     ff = 0.7
@@ -57,12 +57,10 @@ def run():
     x2 = np.flipud(x0)
 
 
-    y0 = __sep__(20e-3, [6, 4, 2, 1.5, 0.5, 0.25])
+    y0 = __sep__(20e-3, [3, 2, 1])
     y1 = __sep__(3*d, 1)
     y2 = list(np.flipud(y0))
 
-    y0 = []
-    y2 = []
 
     z0=__sep__(10e-3, [10, 10, 10])
     z1_iron = __sep__(dFe, [1, 3, 5, 3, 1])
@@ -70,6 +68,7 @@ def run():
     z2 = list(np.flipud(z0))
 
     z1_iron_MS_sep = [0.1, 0.1, 1, 3, 7, 7, 3, 1, 0.1, 0.1]
+    z1_iron_MS_sep = [1, 3, 7, 7, 3, 1]
 
 
     # class myDraw:
@@ -99,7 +98,7 @@ def run():
 
 
 
-    order0 = 2
+    order0 = 1
 
 
     # ## 4. All together with Eddy currents
@@ -148,7 +147,7 @@ def run():
     def calcRef():
         fesPhi = H1(meshRef, order=order0+1, dirichlet="top|bottom" if rotate_excitation else "left|right" , complex=not static)
         if not static:
-            fesT = HCurl(meshRef, order=order0, dirichlet="itop|ibot|interface_x|left|right", complex=True, definedon=meshRef.Materials("iron"), nograds=True)
+            fesT = HCurl(meshRef, order=order0, dirichlet="itop|ibot|interface.*|left|right", complex=True, definedon=meshRef.Materials("iron"), nograds=True)
             fes = FESpace([fesPhi, fesT])
         
         else:
@@ -213,6 +212,7 @@ def run():
             x1_i=x1_i,
             numSheets=numSheets, numPeriods=1,
             multiScale=True, 
+            extendedGapDomain=True,
             z1_iron_MS_sep=z1_iron_MS_sep, 
             specialTB1=False, specialTB2=False, # speTB1 for seperated first sheet, speTB2 for spec domain in first sheet
             domainName_Gap = "gap",
@@ -302,7 +302,7 @@ def run():
         domains = "iron|gap"
 
         roughbnd = "left|right" 
-        roughbnd_inner = "interface_x" 
+        roughbnd_inner = "interface_x|interface_y" 
         smoothbnd = "itop|ibot" 
 
 
@@ -345,7 +345,7 @@ def run():
         orderT = [
             # cl_Phi([pyPhiConst(val = 1, inAir=False), pyPhiZero()], fes_order=2, material="iron", dirichlet=roughbnd_inner+ "|" + smoothbnd, inAir=False, nograds=False), 
             # cl_Phi(1, fes_order=2, material="iron", dirichlet=roughbnd_inner, inAir=False, modelHalfAir=True, nograds=True),  
-            cl_Phi(2, fes_order=2, material="iron", dirichlet=roughbnd_inner, inAir=False, modelHalfAir=False, nograds=True), 
+            cl_Phi(2, fes_order=1, material="iron", dirichlet=roughbnd_inner, inAir=False, modelHalfAir=False, nograds=True), 
         ]
 
 
@@ -589,10 +589,25 @@ def run():
 
     # Draw(sum(gradgradMS.gradsol_comp), meshRef, "H_MS")
     # Draw(H_ref, meshRef, "H_Ref")
-    Draw(IfPos(x, sum(gradgradMS.gradsol_comp), H_ref), meshRef, "H_diff")
-    Draw(mu * IfPos(x, sum(gradgradMS.gradsol_comp), H_ref), meshRef, "B_diff")
 
-    Draw(IfPos(x, J_ref, J_MS), meshRef, "J_diff")
+
+
+    def tmpDraw(a, b, name="test", diff=False, order=2):
+        tmp = GridFunction(VectorL2(meshRef, order=order, complex=not static))
+        with TaskManager():
+            if not diff:
+                tmp.Set(IfPos(x, b, a))
+            else:
+                tmp.Set(a- b)
+        Draw(tmp, meshRef, name)
+        
+    tmpDraw(sum(gradgradMS.gradsol_comp), H_ref, "H_vgl")
+    tmpDraw(mu * sum(gradgradMS.gradsol_comp), mu* H_ref, "B_vgl")
+    tmpDraw(J_MS, J_ref, "J_vgl")
+
+    tmpDraw(sum(gradgradMS.gradsol_comp), H_ref, "H_diff", diff=True)
+    tmpDraw(mu * sum(gradgradMS.gradsol_comp), mu* H_ref, "B_diff", diff=True)
+    tmpDraw(J_MS, J_ref, "J_diff", diff=True)
 
 
     print("eddy current losses ref", Integrate(InnerProduct(J_ref, J_ref * 1/sigmaFe), meshRef, definedon=meshRef.Materials("iron")).real)

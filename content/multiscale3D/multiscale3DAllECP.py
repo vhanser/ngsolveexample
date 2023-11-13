@@ -16,12 +16,18 @@ from ngsolve import Draw
 
 import matplotlib.pyplot as plt
 
-from myPackage import evalOnLine, __sep__
+from myPackage import evalOnLine, __sep__, L2Draw
 from stepLapMeshGenerator import sheetsMeshCenter
 
 import numpy as np
 
+import importlib
+import myPackage as mp
+mp = importlib.reload(mp)
 
+evalOnLine = mp.evalOnLine
+__sep__ = mp.__sep__
+L2Draw = mp.L2Draw
 
 def run():
     static = False
@@ -34,9 +40,7 @@ def run():
     dFe = d*ff
     d0 = d*(1-ff)
 
-    
 
-        
 
     specialTB1 = [1, 1, 1,1]
     specialTB1 = False
@@ -71,19 +75,7 @@ def run():
     z1_iron_MS_sep = [1, 3, 7, 7, 3, 1]
 
 
-    # class myDraw:
-    #     scenes = {}
-    #     def __init__(self, *args, **kwargs):
-    #         if id(args[0]) not in myDraw.scenes.keys():
-    #             myDraw.scenes.update({id(args[0]):Draw(*args, **kwargs)})
-    #         else:
-    #             myDraw.scenes[id(args[0])].Draw()
-    #     def updateAll():
-    #         for s in myDraw.scenes.values():
-    #             s.Redraw()
 
-
-    # In[6]:
 
 
     mu0 = 4e-7*np.pi
@@ -336,10 +328,10 @@ def run():
         """
         orderPhi = [
 
-                cl_Phi(1, fes_order=1, material=domains, dirichlet=roughbnd, useGradients=True, useAbsolutes=True, modelHalfAir=True), 
-                cl_Phi([smoothBPhi2, smoothBPhi2.getDiff()], fes_order=1, material=domains, dirichlet=roughbnd, useGradients=True, modelHalfAir=False),
+                cl_Phi(1, fes_order=1, material=domains, dirichlet=roughbnd, useGradients=False, useAbsolutes=True, modelHalfAir=True), 
+                # cl_Phi([smoothBPhi2, smoothBPhi2.getDiff()], fes_order=1, material=domains, dirichlet=roughbnd, useGradients=True, modelHalfAir=False),
                 cl_Phi(2, fes_order=1, material=domains, dirichlet=roughbnd, inIron=False, modelHalfAir=False), 
-                # cl_Phi(2, fes_order=1, material=domains, dirichlet=roughbnd+ "|" + smoothbnd, inAir=False, modelHalfAir=False), 
+                cl_Phi(2, fes_order=1, material=domains, dirichlet=roughbnd, inAir=False, modelHalfAir=False), 
             ]
 
         orderT = [
@@ -592,22 +584,15 @@ def run():
 
 
 
-    def tmpDraw(a, b, name="test", diff=False, order=2):
-        tmp = GridFunction(VectorL2(meshRef, order=order, complex=not static))
-        with TaskManager():
-            if not diff:
-                tmp.Set(IfPos(x, b, a))
-            else:
-                tmp.Set(a- b)
-        Draw(tmp, meshRef, name)
-        
-    tmpDraw(sum(gradgradMS.gradsol_comp), H_ref, "H_vgl")
-    tmpDraw(mu * sum(gradgradMS.gradsol_comp), mu* H_ref, "B_vgl")
-    tmpDraw(J_MS, J_ref, "J_vgl")
 
-    tmpDraw(sum(gradgradMS.gradsol_comp), H_ref, "H_diff", diff=True)
-    tmpDraw(mu * sum(gradgradMS.gradsol_comp), mu* H_ref, "B_diff", diff=True)
-    tmpDraw(J_MS, J_ref, "J_diff", diff=True)
+        
+    L2Draw((H_ref, sum(gradgradMS.gradsol_comp)), meshRef, "H_vgl")
+    L2Draw((mu* H_ref, mu * sum(gradgradMS.gradsol_comp)), meshRef, "B_vgl")
+    L2Draw((J_ref, J_MS), meshRef, "J_vgl")
+
+    L2Draw((H_ref, sum(gradgradMS.gradsol_comp)), meshRef, "H_diff", diff=True)
+    L2Draw((mu* H_ref, mu * sum(gradgradMS.gradsol_comp)), meshRef, "B_diff", diff=True)
+    L2Draw((J_ref, J_MS), meshRef, "J_diff", diff=True)
 
 
     print("eddy current losses ref", Integrate(InnerProduct(J_ref, J_ref * 1/sigmaFe), meshRef, definedon=meshRef.Materials("iron")).real)
@@ -617,3 +602,8 @@ def run():
 
     from myPackage import myBreak
     myBreak(locals(), globals(), file=__file__.split('/')[-1])
+
+
+if __name__ == "__main__":
+    import netgen.gui
+    run()

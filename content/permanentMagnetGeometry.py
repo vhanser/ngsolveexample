@@ -8,25 +8,25 @@ import numpy as np
 
 class simpleGeoMagnetOnIron:
 #                   B
-#      4                           3
+#                                 
 #       ---------------------------
-#      |      9            8      |     r4-r3
+#      |                          |     r4-r3
 #      |        ------------      |
 #      |        |          |      |      r3-r2
-#     5|--------------------------| 2
-#      |       6           7      |        r2-r1
-#     WP --------------------------  1
+#      |--------------------------| 
+#      |                          |        r2-r1
+#     WP --------------------------  
 #
 #               |    BM    |
 #
 #                                           r1
 #
-#                                  0     
+#                    0                   
 #
 #
 #
 
-    def __init__(self, r1, r2, r3, r4, Bm=4e-3, B=8e-3, maxh=1e-3, periodic=False, maxhEdges = 1):
+    def __init__(self, r1, r2, r3, r4, Bm=4e-3, B=8e-3, maxh=1, maxhRotor=1, maxhMagnet=1, maxhAir=1, periodic=False, maxhEdges = 1):
         self.r1 = r1
         self.r2 = r2
         self.r3 = r3
@@ -35,45 +35,63 @@ class simpleGeoMagnetOnIron:
         self.B = B
         self.maxh = maxh
         self.periodic = periodic
+        self.maxhMagnet = maxhMagnet
+        self.maxhRotor = maxhRotor
+        self.maxhAir = maxhAir
+
+
         
           
 
         wp = WorkPlane()
-        wp.MoveTo(-B,r1)
+        wp.MoveTo(-B/2,r1)
         rotor = wp.Rectangle(B,r2 - r1).Face()
         rotor.name = "rotor"
         rotor.edges.Min(X).name = "left_iron" if not periodic else "periodic"
         rotor.edges.Max(X).name = "right_iron" if not periodic else "periodic"
-        rotor.edges.Max(Y).name = "interface"
+        if B != Bm:
+            rotor.edges.Max(Y).name = "interface"
         rotor.edges.Min(Y).name = "inner"
         rotor.edges.Max(Y).maxh = maxhEdges
+        rotor.maxh = maxhRotor
 
-        wp.MoveTo(-B + (B-Bm)/2,r2)
+        wp.MoveTo(-B/2 + (B-Bm)/2,r2)
         magnet = wp.Rectangle(Bm,r3-r2).Face()
         magnet.name = "magnet"
-        magnet.edges.name = "interface"
+        
+        if B == Bm:
+            magnet.edges.Min(X).name = "left_magnet" if not periodic else "periodic"
+            magnet.edges.Max(X).name = "right_magnet" if not periodic else "periodic"    
+            magnet.edges.Max(Y).name = "interface"
+        else:
+            magnet.edges.name = "interface"
         magnet.edges.maxh = maxhEdges
+        magnet.maxh = maxhMagnet
 
         magnet.edges.Min(Y).name = "mag_rot"
+
         
-        wp.MoveTo(-B,r2)
-        air = wp.Rectangle(B,r4-r2).Face()
+        
+        if B == Bm:
+            wp.MoveTo(-B/2,r3)
+            air = wp.Rectangle(B,r4-r3).Face()
+        else:
+            wp.MoveTo(-B/2,r2)
+            air = wp.Rectangle(B,r4-r2).Face()
         air.name = "air"
         air.edges.Min(X).name = "left_air" if not periodic else "periodic"
         air.edges.Max(X).name = "right_air" if not periodic else "periodic"
         air.edges.Max(Y).name = "outer"
-        
+        air.maxh = maxhAir
 
         if periodic:
-            
             self.geo = Glue([rotor, magnet, air-magnet])
 
-            edge_air_left = self.geo.edges.Nearest(Pnt(-B, r2+(r4-r3)/2 , 0))
-            edge_rotor_left = self.geo.edges.Nearest(Pnt(-B, r2+(r2-r1)/2 , 0))
+            edge_air_left = self.geo.edges.Nearest(Pnt(-B/2, r3+(r4-r3)/2 , 0))
+            edge_rotor_left = self.geo.edges.Nearest(Pnt(-B/2, r1+(r2-r1)/2 , 0))
 
-            edge_air_right = self.geo.edges.Nearest(Pnt(0, r2+(r4-r3)/2 , 0))
-            edge_rotor_right = self.geo.edges.Nearest(Pnt(0, r2+(r2-r1)/2 , 0))
-
+            edge_air_right = self.geo.edges.Nearest(Pnt(B/2, r3+(r4-r3)/2 , 0))
+            edge_rotor_right = self.geo.edges.Nearest(Pnt(B/2, r1+(r2-r1)/2 , 0))
             
             edge_air_left.name= "periodic_air"
             edge_rotor_left.name= "periodic_rotor"
@@ -82,6 +100,17 @@ class simpleGeoMagnetOnIron:
 
             edge_air_right.Identify(edge_air_left, "periodic_air", IdentificationType.PERIODIC)
             edge_rotor_right.Identify(edge_rotor_left, "periodic_rotor", IdentificationType.PERIODIC)
+
+            if B == Bm:
+                edge_magnet_right = self.geo.edges.Nearest(Pnt(B/2, r2+(r3-r2)/2 , 0))
+                edge_magnet_left = self.geo.edges.Nearest(Pnt(-B/2, r2+(r3-r2)/2 , 0))
+                edge_magnet_left.name= "periodic_magnet"
+                edge_magnet_right.name= "periodic_magnet"
+                edge_magnet_right.Identify(edge_magnet_left, "periodic_magnet", IdentificationType.PERIODIC)
+
+
+
+
         
         else:
             # self.geo = Glue([rotor, magnet, air-magnet])
@@ -221,3 +250,4 @@ if __name__ == "__main__":
         mesh.Curve(3)
 
         Draw(cMesh.mesh)
+
